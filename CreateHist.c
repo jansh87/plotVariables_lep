@@ -2,7 +2,7 @@
 #define _BrLog 1
 #define nbins_const 80
 #define _pilep 0
-#define _drawData 1
+#define _drawData 0
 #define Scale_MC 0
 #define _newTree 0
 #define smallFile
@@ -67,7 +67,7 @@ int nExtraVariables;
 struct t_momInfo {float e; float m2; float pt; float p3; float p; float costh;} t_gamma,t_track,t_btag,t_PmisswTag,t_PmissWoGamma, t_Vis;
 float fMy4s;
 float ll_theta, fnkss, fnkos, fnk, fq, BDT1,BDT2, pl1_bdt, fnch,fnn;
-float flclass,fl_lep1, fl_lep2, fl_mother1, fl_mother2, fl_mother12;
+float flclass,fdclass,fl_lep1, fl_lep2, fl_mother1, fl_mother2, fl_mother12;
 float sqrt_gxm2, sqrt_xlepm2;
 float test;
 float vis_miss;
@@ -587,9 +587,10 @@ void DefVariables(){
 
 
 
-	tmp = CVar("lclass",&flclass,7,8,15);
-	//vVar.push_back(tmp);
-
+	tmp = CVar("lclass",&flclass,12,0,12);
+	vVar.push_back(tmp);
+	tmp = CVar("dclass",&fdclass,12,0,12);
+	vVar.push_back(tmp);
 	tmp = CVar("fl_lep1",&fl_lep1,35,9.5,44.5);
 	vVar.push_back(tmp);
 
@@ -815,7 +816,7 @@ void DefVariables(){
 
 	tmp_file = CFile(path,"ulnu.root","lep/tree",'u');
 	tmp_file.weight = 1./20;
-	vFile.push_back(tmp_file );
+	//vFile.push_back(tmp_file );
 	
 	tmp_file = CFile(path,"rare.root","lep/tree",'r');
 	tmp_file.weight = 1./50;
@@ -829,7 +830,7 @@ void DefVariables(){
 	vFile.push_back(tmp_file );
 	tmp_file =CFile(path, "continuum_s2.root", "lep/tree",'c');
 	tmp_file.weight = 1./nContiStreams;
-	vFile.push_back(tmp_file );
+	//vFile.push_back(tmp_file );
 	
 	tmp_file =CFile(path, "charged_s3.root", "lep/tree",'o');
 	tmp_file.weight = 1./nStreams;
@@ -839,7 +840,7 @@ void DefVariables(){
 	vFile.push_back(tmp_file );
 	tmp_file =CFile(path, "continuum_s3.root", "lep/tree",'c');
 	tmp_file.weight = 1./nContiStreams;
-	vFile.push_back(tmp_file );
+	//vFile.push_back(tmp_file );
 	
 	tmp_file =CFile(path, "charged_s4.root", "lep/tree",'o');
 	tmp_file.weight = 1./nStreams;
@@ -859,7 +860,7 @@ void DefVariables(){
 	vFile.push_back(tmp_file );
 	tmp_file =CFile(path, "continuum_s1.root", "lep/tree",'c');
 	tmp_file.weight = 1./nContiStreams;
-	vFile.push_back(tmp_file );
+	//vFile.push_back(tmp_file );
 	
 	tmp_file =CFile(path, "charged_s0.root", "lep/tree",'o');
 	tmp_file.weight = 1./nStreams;
@@ -869,7 +870,7 @@ void DefVariables(){
 	vFile.push_back(tmp_file );
 	tmp_file =CFile(path, "continuum_s0.root", "lep/tree",'c');
 	tmp_file.weight = 1./nContiStreams;
-	vFile.push_back(tmp_file );
+	//vFile.push_back(tmp_file );
 	
 	/*
 	tmp_file = CFile(path,"dilepDssMC.root","tree",'s');
@@ -909,7 +910,7 @@ void DefVariables(){
 	vFile.push_back(tmp_file );
 */
 	tmp_file =CFile(path, "data.root", "lep/tree",'d');
-	vFile.push_back(tmp_file );
+	//vFile.push_back(tmp_file );
 
 	tmp_file =CFile(path, "dilepdata.root", "tree",'d');
 	//vFile.push_back(tmp_file );
@@ -1280,6 +1281,19 @@ int GetCont(std::vector<CFile>::iterator it_f)
 				cont = charm_other;
 			else if( lep1.fl_mother != 3  )
 				cont = rare;
+			
+			if(abs(event.lclass) == 2){
+			
+				if(event.dclass == 5) cont = signal_decay;
+				else if(event.dclass == 6) cont = charm_lep;
+				else if(event.dclass == 7) cont = charm_ss_lep;
+				else if(event.dclass == 8) cont = charm_s_lep;
+				else if(event.dclass == 9) cont = FakeLep;
+				else if(event.dclass == 10) cont = otherB;
+				else if(event.dclass == 2) cont = rare;
+				else if(event.dclass == 4) cont = charm_other;
+			
+			} else cont = continuum;
 			
 			/*	
 			if(it_f -> Type == 'o'){ 
@@ -1907,8 +1921,8 @@ void FillHist()
         t = (TTree*)f.Get(it_f->Tree.c_str());
         cout<<t<<endl;
 
-		TTreePerfStats *ps =
-			   new TTreePerfStats(it_f->Name.c_str(),t);
+		//TTreePerfStats *ps =
+		//	   new TTreePerfStats(it_f->Name.c_str(),t);
 
 
         if(_newTree)
@@ -2071,6 +2085,9 @@ void FillHist()
 			//if(!(lep1.ps<1.2  && gx.m2<2.6 && gmiss.m2>2.5)) continue;
 			//if(gx.m2<1.8) continue;
 			if(abs(btag.pcode_b) == 521) continue;	
+			
+			if(abs(event.lclass) != 2) continue; 
+			if(event.dclass == 1 || event.dclass == 3) continue; 
 			//	if((btag.pcode_b) == 511) continue;
 			
 			
@@ -2205,6 +2222,9 @@ void FillHist()
 
 			int cont = GetCont(it_f);
 			int cont_old =cont;
+			
+			fdclass = event.dclass;
+			flclass = abs(event.lclass);
 			
 
 			//if (cont != charm_lep  && cont != charm_s_lep && cont != charm_ss_lep) continue;
@@ -3269,11 +3289,11 @@ t_track.costh = lvTracks.CosTheta();
 
 		cout<<"\rDone" <<endl;
 
-		ps->Print();
-		char sNam[100];
-		sprintf(sNam,"ReadPerf_%s.root",it_f->Name.c_str());
-		ps->SaveAs();
-		delete ps;
+		//ps->Print();
+		//char sNam[100];
+		//sprintf(sNam,"ReadPerf_%s.root",it_f->Name.c_str());
+		//ps->SaveAs();
+		//delete ps;
 		t->DropBranchFromCache("*");
 		t->SetCacheSize(0);
 		t->Delete();
@@ -3822,8 +3842,8 @@ void DrawHist()
 			sumMC[j]->SetLineColor(kBlue+2);
 			sumMC_uw[j]->Add(hists_uw[i][j]);
 
-            		//if(hists[i][j]->Integral() >0.1)
-			   // hists[i][j] -> Scale(0.8*hists[data][j]->Integral()/hists[i][j]->Integral());
+            if(hists[i][j]->Integral() >0.0001)
+			    hists[i][j] -> Scale(1./hists[i][j]->Integral());
 
 
 		}
@@ -3837,15 +3857,18 @@ void DrawHist()
 		StackMC[j]->GetXaxis()->SetTitleSize(0.06);
 		StackMC[j]->GetYaxis()->SetTitleSize(0.06);
 		StackMC[j]->GetYaxis()->Draw();
-		sumMC[j]->Draw("HIST same");
-		if(_drawData)
+		
+		if(_drawData){
 			hists[data][j]->Draw("E1 X0 same");
-		hists[data][j]->GetXaxis()->SetTitle(vVar[j].xTitle.c_str());
-		hists[data][j]->GetYaxis()->SetTitle("Events");
-		Ymax = hists[data][j]->GetMaximum();
-		Ymax +=sqrt(Ymax);
-		if(Ymax < sumMC[j]->GetMaximum()) Ymax = sumMC[j]->GetMaximum();
-		StackMC[j]->SetMaximum(Ymax*1.05);
+			sumMC[j]->Draw("HIST same");
+			hists[data][j]->GetXaxis()->SetTitle(vVar[j].xTitle.c_str());
+			hists[data][j]->GetYaxis()->SetTitle("Events");
+			Ymax = hists[data][j]->GetMaximum();
+			Ymax +=sqrt(Ymax);
+			if(Ymax < sumMC[j]->GetMaximum()) Ymax = sumMC[j]->GetMaximum();
+			StackMC[j]->SetMaximum(Ymax*1.05);
+		}
+		
 		cv1->Update();
 
 		if((j + 1)%6 == 0 || j+1 ==nVariables)
